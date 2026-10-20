@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Saldos</string>
+    <string name="widget_small_label">Saldos</string>
+    <string name="widget_square_label">Saldos 1x1</string>
+    <string name="widget_description">Saldo CNT</string>
+</resources>
