@@ -74,6 +74,21 @@ The release build enables R8 and resource shrinking. Because it uses a
 different signing key than the debug build, uninstall the debug app before
 installing the release APK.
 
+## CI and releases
+
+GitHub Actions (`.github/workflows/release.yml`) runs the unit tests, lint and
+a signed release build on every `v*` tag and on manual `workflow_dispatch`.
+Tagged builds attach the APK to a GitHub Release and also upload it as a
+workflow artifact.
+
+Required repository secrets:
+
+- `RELEASE_KEYSTORE_BASE64` — base64 of the release `.jks`
+- `RELEASE_STORE_PASSWORD`
+- `RELEASE_KEY_ALIAS`
+- `RELEASE_KEY_PASSWORD`
+
+
 ## Architecture
 
 ```
