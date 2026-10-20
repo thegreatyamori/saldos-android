@@ -121,6 +121,7 @@ class SaldosViewModelTest {
         val viewModel = SaldosViewModel(repository)
 
         viewModel.logout()
+        advanceUntilIdle()
 
         assertFalse(viewModel.state.value.credentialsPresent)
         assertNull(viewModel.state.value.snapshot)
@@ -195,7 +196,7 @@ class SaldosViewModelTest {
 
         override fun identifier(): String? = identifier
 
-        override fun logout() {
+        override suspend fun logout() {
             credentialsPresent = false
             identifier = null
             snapshot = null

@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -31,10 +30,6 @@ class MainActivity : ComponentActivity() {
                 val viewModel: SaldosViewModel = viewModel(factory = viewModelFactory)
                 val state by viewModel.state.collectAsStateWithLifecycle()
                 var showSettings by rememberSaveable { mutableStateOf(false) }
-
-                LaunchedEffect(state.snapshot?.fetchedAt) {
-                    Widgets.updateAll(this@MainActivity)
-                }
 
                 if (showSettings) {
                     SettingsScreen(

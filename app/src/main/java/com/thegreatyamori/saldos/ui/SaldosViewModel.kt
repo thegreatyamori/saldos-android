@@ -77,8 +77,10 @@ class SaldosViewModel(private val repository: BalancesRepository) : ViewModel() 
     }
 
     fun logout() {
-        repository.logout()
-        _state.value = SaldosUiState(refreshPolicy = repository.refreshPolicy())
+        viewModelScope.launch {
+            repository.logout()
+            _state.value = SaldosUiState(refreshPolicy = repository.refreshPolicy())
+        }
     }
 
     private fun fetch(

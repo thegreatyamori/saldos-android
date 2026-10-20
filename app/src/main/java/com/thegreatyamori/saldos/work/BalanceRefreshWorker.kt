@@ -8,7 +8,6 @@ import com.thegreatyamori.saldos.data.cnt.CntException
 import com.thegreatyamori.saldos.data.settings.allowsAutomaticRefresh
 import com.thegreatyamori.saldos.domain.NoCredentialsException
 import com.thegreatyamori.saldos.domain.RefreshResult
-import com.thegreatyamori.saldos.widget.Widgets
 
 class BalanceRefreshWorker(
     appContext: Context,
@@ -26,10 +25,7 @@ class BalanceRefreshWorker(
         }
 
         return when (val result = repository.refresh()) {
-            is RefreshResult.Success -> {
-                Widgets.updateAll(context)
-                Result.success()
-            }
+            is RefreshResult.Success -> Result.success()
             is RefreshResult.Failure -> when (result.error) {
                 is NoCredentialsException, is CntException.InvalidCredentials -> Result.failure()
                 else -> Result.retry()

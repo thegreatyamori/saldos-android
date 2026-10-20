@@ -14,6 +14,10 @@ sealed interface RefreshResult {
 
 class NoCredentialsException : IllegalStateException("No credentials stored")
 
+fun interface SnapshotListener {
+    suspend fun onSnapshotChanged()
+}
+
 interface BalancesRepository {
     fun cached(): Snapshot?
     fun hasCredentials(): Boolean
@@ -24,14 +28,15 @@ interface BalancesRepository {
     fun refreshPolicy(): RefreshPolicy
     fun setRefreshPolicy(policy: RefreshPolicy)
     fun identifier(): String?
-    fun logout()
+    suspend fun logout()
 }
 
 class DefaultBalancesRepository(
     private val client: CntClient,
     private val credentials: CredentialStore,
     private val snapshots: SnapshotStore,
-    private val settings: SettingsStore
+    private val settings: SettingsStore,
+    private val listener: SnapshotListener
 ) : BalancesRepository {
 
     override fun cached(): Snapshot? = snapshots.read()
@@ -61,9 +66,10 @@ class DefaultBalancesRepository(
 
     override fun identifier(): String? = credentials.load()?.identifier
 
-    override fun logout() {
+    override suspend fun logout() {
         credentials.clear()
         snapshots.clear()
+        listener.onSnapshotChanged()
     }
 
     private suspend fun fetch(
@@ -80,6 +86,7 @@ class DefaultBalancesRepository(
             credentials.save(Credentials(identifier, password))
         }
         snapshots.write(snapshot)
+        listener.onSnapshotChanged()
         RefreshResult.Success(snapshot)
     } catch (error: Exception) {
         RefreshResult.Failure(error, cached())
