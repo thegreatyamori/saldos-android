@@ -6,7 +6,10 @@ import com.thegreatyamori.saldos.data.cache.SnapshotStore
 import com.thegreatyamori.saldos.data.cnt.CntClient
 import com.thegreatyamori.saldos.data.cnt.PersistentCookieJar
 import com.thegreatyamori.saldos.data.creds.KeystoreCredentialStore
+import com.thegreatyamori.saldos.data.packages.ActivationStore
+import com.thegreatyamori.saldos.data.packages.PackageUpdater
 import com.thegreatyamori.saldos.data.settings.SettingsStore
+import com.thegreatyamori.saldos.data.sms.CntSmsReader
 import com.thegreatyamori.saldos.domain.BalancesRepository
 import com.thegreatyamori.saldos.domain.DefaultBalancesRepository
 import com.thegreatyamori.saldos.domain.SnapshotListener
@@ -19,6 +22,12 @@ class AppContainer(context: Context) {
 
     private val applicationContext = context.applicationContext
     private val snapshotStore = SnapshotStore.create(applicationContext)
+    private val settings = SettingsStore(applicationContext)
+    private val packageUpdater = PackageUpdater(
+        reader = CntSmsReader(applicationContext.contentResolver),
+        store = ActivationStore.create(applicationContext),
+        settings = settings
+    )
 
     private val client = CntClient(
         cookieJar = PersistentCookieJar(File(applicationContext.filesDir, "cookies.json"))
@@ -28,7 +37,8 @@ class AppContainer(context: Context) {
         client = client,
         credentials = KeystoreCredentialStore(applicationContext),
         snapshots = snapshotStore,
-        settings = SettingsStore(applicationContext),
+        settings = settings,
+        packages = packageUpdater,
         listener = SnapshotListener {
             withContext(Dispatchers.IO) {
                 try {

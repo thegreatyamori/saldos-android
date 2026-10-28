@@ -9,6 +9,7 @@ import com.thegreatyamori.saldos.domain.RefreshResult
 import com.thegreatyamori.saldos.domain.Snapshot
 import com.thegreatyamori.saldos.domain.SnapshotHeader
 import com.thegreatyamori.saldos.domain.SnapshotLine
+import com.thegreatyamori.saldos.domain.TrackedPackage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -157,6 +158,9 @@ class SaldosViewModelTest {
 
         var lastLogin: Pair<String, String>? = null
         var selectedLine: String? = null
+        var packages: List<TrackedPackage> = emptyList()
+        var smsEnabled = false
+        var smsDismissed = false
 
         override fun cached(): Snapshot? = snapshot
 
@@ -195,6 +199,20 @@ class SaldosViewModelTest {
         }
 
         override fun identifier(): String? = identifier
+
+        override fun trackedPackages(): List<TrackedPackage> = packages
+
+        override fun smsTrackingEnabled(): Boolean = smsEnabled
+
+        override fun setSmsTrackingEnabled(enabled: Boolean) {
+            smsEnabled = enabled
+        }
+
+        override fun smsOptInDismissed(): Boolean = smsDismissed
+
+        override fun dismissSmsOptIn() {
+            smsDismissed = true
+        }
 
         override suspend fun logout() {
             credentialsPresent = false

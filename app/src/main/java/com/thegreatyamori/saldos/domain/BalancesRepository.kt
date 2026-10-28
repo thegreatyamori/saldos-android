@@ -4,8 +4,11 @@ import com.thegreatyamori.saldos.data.cache.SnapshotStore
 import com.thegreatyamori.saldos.data.cnt.CntClient
 import com.thegreatyamori.saldos.data.creds.CredentialStore
 import com.thegreatyamori.saldos.data.creds.Credentials
+import com.thegreatyamori.saldos.data.packages.PackageUpdater
 import com.thegreatyamori.saldos.data.settings.RefreshPolicy
 import com.thegreatyamori.saldos.data.settings.SettingsStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 sealed interface RefreshResult {
     data class Success(val snapshot: Snapshot) : RefreshResult
@@ -28,6 +31,11 @@ interface BalancesRepository {
     fun refreshPolicy(): RefreshPolicy
     fun setRefreshPolicy(policy: RefreshPolicy)
     fun identifier(): String?
+    fun trackedPackages(): List<TrackedPackage>
+    fun smsTrackingEnabled(): Boolean
+    fun setSmsTrackingEnabled(enabled: Boolean)
+    fun smsOptInDismissed(): Boolean
+    fun dismissSmsOptIn()
     suspend fun logout()
 }
 
@@ -36,6 +44,7 @@ class DefaultBalancesRepository(
     private val credentials: CredentialStore,
     private val snapshots: SnapshotStore,
     private val settings: SettingsStore,
+    private val packages: PackageUpdater,
     private val listener: SnapshotListener
 ) : BalancesRepository {
 
@@ -66,9 +75,24 @@ class DefaultBalancesRepository(
 
     override fun identifier(): String? = credentials.load()?.identifier
 
+    override fun trackedPackages(): List<TrackedPackage> = packages.packages()
+
+    override fun smsTrackingEnabled(): Boolean = settings.smsTrackingEnabled
+
+    override fun setSmsTrackingEnabled(enabled: Boolean) {
+        settings.smsTrackingEnabled = enabled
+    }
+
+    override fun smsOptInDismissed(): Boolean = settings.smsOptInDismissed
+
+    override fun dismissSmsOptIn() {
+        settings.smsOptInDismissed = true
+    }
+
     override suspend fun logout() {
         credentials.clear()
         snapshots.clear()
+        packages.clear()
         listener.onSnapshotChanged()
     }
 
@@ -77,6 +101,7 @@ class DefaultBalancesRepository(
         password: String,
         persistCredentials: Boolean
     ): RefreshResult = try {
+        val previous = snapshots.read()
         val snapshot = client.fetchBalances(
             identifier = identifier,
             password = password,
@@ -86,6 +111,7 @@ class DefaultBalancesRepository(
             credentials.save(Credentials(identifier, password))
         }
         snapshots.write(snapshot)
+        runCatching { withContext(Dispatchers.IO) { packages.onSnapshot(previous, snapshot) } }
         listener.onSnapshotChanged()
         RefreshResult.Success(snapshot)
     } catch (error: Exception) {

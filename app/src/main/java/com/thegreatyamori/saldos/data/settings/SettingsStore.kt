@@ -22,9 +22,23 @@ class SettingsStore(context: Context) {
             prefs.edit().putString(KEY_REFRESH_POLICY, value.name).apply()
         }
 
+    var smsTrackingEnabled: Boolean
+        get() = prefs.getBoolean(KEY_SMS_TRACKING, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_SMS_TRACKING, value).apply()
+        }
+
+    var smsOptInDismissed: Boolean
+        get() = prefs.getBoolean(KEY_SMS_OPT_IN_DISMISSED, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_SMS_OPT_IN_DISMISSED, value).apply()
+        }
+
     private companion object {
         const val PREFS = "saldos.settings"
         const val KEY_PREFERRED_LINE = "preferred_phone_value"
         const val KEY_REFRESH_POLICY = "refresh_policy"
+        const val KEY_SMS_TRACKING = "sms_tracking_enabled"
+        const val KEY_SMS_OPT_IN_DISMISSED = "sms_opt_in_dismissed"
     }
 }
