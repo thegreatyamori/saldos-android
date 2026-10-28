@@ -10,7 +10,10 @@ fun SaldosRoot(
     onLogin: (String, String) -> Unit,
     onRefresh: () -> Unit,
     onOpenSettings: () -> Unit,
-    onSelectLine: (String) -> Unit
+    onSelectLine: (String) -> Unit,
+    onEnableSms: () -> Unit,
+    onDismissSms: () -> Unit,
+    showSmsOptIn: Boolean
 ) {
     val showLogin = !state.credentialsPresent && state.snapshot == null
     if (showLogin) {
@@ -24,7 +27,10 @@ fun SaldosRoot(
             state = state,
             onRefresh = onRefresh,
             onOpenSettings = onOpenSettings,
-            onSelectLine = onSelectLine
+            onSelectLine = onSelectLine,
+            onEnableSms = onEnableSms,
+            onDismissSms = onDismissSms,
+            showSmsOptIn = showSmsOptIn
         )
     }
 }

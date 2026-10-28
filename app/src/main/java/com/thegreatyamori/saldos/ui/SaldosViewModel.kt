@@ -9,6 +9,9 @@ import com.thegreatyamori.saldos.data.settings.RefreshPolicy
 import com.thegreatyamori.saldos.domain.BalancesRepository
 import com.thegreatyamori.saldos.domain.RefreshResult
 import com.thegreatyamori.saldos.domain.Snapshot
+import com.thegreatyamori.saldos.util.ExpiryUi
+import com.thegreatyamori.saldos.util.activePackage
+import com.thegreatyamori.saldos.util.expiryUi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +24,10 @@ data class SaldosUiState(
     val refreshing: Boolean = false,
     val error: UiError? = null,
     val refreshPolicy: RefreshPolicy = RefreshPolicy.DATA_ONLY,
-    val accountIdentifier: String? = null
+    val accountIdentifier: String? = null,
+    val expiry: ExpiryUi? = null,
+    val smsTrackingEnabled: Boolean = false,
+    val smsOptInDismissed: Boolean = false
 )
 
 sealed interface UiError {
@@ -47,7 +53,10 @@ class SaldosViewModel(private val repository: BalancesRepository) : ViewModel() 
             credentialsPresent = repository.hasCredentials(),
             snapshot = repository.cached(),
             refreshPolicy = repository.refreshPolicy(),
-            accountIdentifier = repository.identifier()
+            accountIdentifier = repository.identifier(),
+            expiry = currentExpiry(),
+            smsTrackingEnabled = repository.smsTrackingEnabled(),
+            smsOptInDismissed = repository.smsOptInDismissed()
         )
     )
     val state: StateFlow<SaldosUiState> = _state.asStateFlow()
@@ -79,9 +88,26 @@ class SaldosViewModel(private val repository: BalancesRepository) : ViewModel() 
     fun logout() {
         viewModelScope.launch {
             repository.logout()
-            _state.value = SaldosUiState(refreshPolicy = repository.refreshPolicy())
+            _state.value = SaldosUiState(
+                refreshPolicy = repository.refreshPolicy(),
+                smsTrackingEnabled = repository.smsTrackingEnabled(),
+                smsOptInDismissed = repository.smsOptInDismissed()
+            )
         }
     }
+
+    fun setSmsTrackingEnabled(enabled: Boolean) {
+        repository.setSmsTrackingEnabled(enabled)
+        _state.update { it.copy(smsTrackingEnabled = enabled) }
+        if (enabled) refresh()
+    }
+
+    fun dismissSmsOptIn() {
+        repository.dismissSmsOptIn()
+        _state.update { it.copy(smsOptInDismissed = true) }
+    }
+
+    private fun currentExpiry(): ExpiryUi? = expiryUi(activePackage(repository.trackedPackages()))
 
     private fun fetch(
         keepCredentialsOnFailure: Boolean,
@@ -96,7 +122,8 @@ class SaldosViewModel(private val repository: BalancesRepository) : ViewModel() 
                         snapshot = result.snapshot,
                         refreshing = false,
                         error = null,
-                        accountIdentifier = repository.identifier() ?: it.accountIdentifier
+                        accountIdentifier = repository.identifier() ?: it.accountIdentifier,
+                        expiry = currentExpiry()
                     )
                 }
                 is RefreshResult.Failure -> _state.update {
@@ -104,7 +131,8 @@ class SaldosViewModel(private val repository: BalancesRepository) : ViewModel() 
                         credentialsPresent = keepCredentialsOnFailure || it.credentialsPresent,
                         snapshot = result.cached ?: it.snapshot,
                         refreshing = false,
-                        error = result.error.toUiError()
+                        error = result.error.toUiError(),
+                        expiry = currentExpiry()
                     )
                 }
             }

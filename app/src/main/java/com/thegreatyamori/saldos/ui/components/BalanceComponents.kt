@@ -21,6 +21,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +34,7 @@ import com.thegreatyamori.saldos.domain.LineInfo
 import com.thegreatyamori.saldos.domain.Snapshot
 import com.thegreatyamori.saldos.ui.UiError
 import com.thegreatyamori.saldos.ui.message
+import com.thegreatyamori.saldos.util.ExpiryUi
 import com.thegreatyamori.saldos.util.timeAgo
 import kotlin.math.roundToInt
 
@@ -171,6 +173,58 @@ fun SnapshotMeta(snapshot: Snapshot) {
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@Composable
+fun ExpiryBadge(expiry: ExpiryUi) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = expiry.text,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (expiry.estimated) {
+            Spacer(Modifier.width(6.dp))
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Text(
+                    text = "estimado",
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SmsOptInCard(onEnable: () -> Unit, onDismiss: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Detectar activaciones",
+                style = MaterialTheme.typography.titleSmall
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Saldos lee solo los SMS de CNT (777) para saber cuándo empieza a correr " +
+                    "tu paquete. Nada sale del teléfono.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onEnable) { Text("Activar") }
+                TextButton(onClick = onDismiss) { Text("Ahora no") }
+            }
+        }
     }
 }
 

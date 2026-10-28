@@ -26,9 +26,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.thegreatyamori.saldos.ui.SaldosUiState
+import com.thegreatyamori.saldos.ui.components.ExpiryBadge
 import com.thegreatyamori.saldos.ui.components.HeroCard
 import com.thegreatyamori.saldos.ui.components.ItemRow
 import com.thegreatyamori.saldos.ui.components.LinesRow
+import com.thegreatyamori.saldos.ui.components.SmsOptInCard
 import com.thegreatyamori.saldos.ui.components.SnapshotMeta
 import com.thegreatyamori.saldos.ui.components.StatusBanner
 
@@ -37,7 +39,10 @@ fun HomeScreen(
     state: SaldosUiState,
     onRefresh: () -> Unit,
     onOpenSettings: () -> Unit,
-    onSelectLine: (String) -> Unit
+    onSelectLine: (String) -> Unit,
+    onEnableSms: () -> Unit,
+    onDismissSms: () -> Unit,
+    showSmsOptIn: Boolean
 ) {
     val snapshot = state.snapshot
 
@@ -59,7 +64,13 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 item { StatusBanner(error = state.error, hasCachedData = snapshot != null) }
+                if (showSmsOptIn) {
+                    item { SmsOptInCard(onEnable = onEnableSms, onDismiss = onDismissSms) }
+                }
                 item { HeroCard(hero = snapshot?.hero) }
+                state.expiry?.let { expiry ->
+                    item { ExpiryBadge(expiry) }
+                }
 
                 items(snapshot?.items.orEmpty(), key = { it.label }) { item ->
                     ItemRow(item)

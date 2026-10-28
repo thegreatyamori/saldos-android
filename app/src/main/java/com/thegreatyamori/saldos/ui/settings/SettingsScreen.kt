@@ -30,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -52,7 +53,8 @@ fun SettingsScreen(
     onPolicyChange: (RefreshPolicy) -> Unit,
     onSelectLine: (String) -> Unit,
     onAddWidget: () -> Unit,
-    onAddSquareWidget: () -> Unit
+    onAddSquareWidget: () -> Unit,
+    onSmsTrackingChange: (Boolean) -> Unit
 ) {
     var showPrivacy by rememberSaveable { mutableStateOf(false) }
 
@@ -125,6 +127,34 @@ fun SettingsScreen(
                             description = "Solo al tocar actualizar",
                             selected = state.refreshPolicy == RefreshPolicy.MANUAL,
                             onSelect = { onPolicyChange(RefreshPolicy.MANUAL) }
+                        )
+                    }
+                }
+            }
+
+            item {
+                SectionTitle("PAQUETES")
+                SettingsCard {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Detectar activaciones",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = "Lee solo los SMS de CNT (777)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = state.smsTrackingEnabled,
+                            onCheckedChange = onSmsTrackingChange
                         )
                     }
                 }
