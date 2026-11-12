@@ -4,4 +4,17 @@
     <string name="widget_small_label">Saldos</string>
     <string name="widget_square_label">Saldos 1x1</string>
     <string name="widget_description">Saldo CNT</string>
+    <string name="expiry_channel_name">Vencimiento de paquete</string>
+    <string name="expiry_channel_description">Recordatorios antes de que venzan tus megas</string>
+    <string name="expiry_notification_title">Saldos</string>
+    <string name="expiry_notification_today">Tu paquete CNT vence hoy</string>
+    <string name="expiry_notification_tomorrow">Tu paquete CNT vence mañana</string>
+    <plurals name="expiry_notification_days">
+        <item quantity="one">Tu paquete CNT vence en %1$d día</item>
+        <item quantity="other">Tu paquete CNT vence en %1$d días</item>
+    </plurals>
+    <string name="expiry_notification_expired">Tus megas vencieron</string>
+    <string name="expiry_notification_consumed">Tus megas se agotaron</string>
+    <string name="expiry_notification_estimated_suffix"> (estimado)</string>
+    <string name="expiry_notification_public">Revisá tu paquete en Saldos</string>
 </resources>
