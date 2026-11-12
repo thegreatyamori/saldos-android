@@ -9,6 +9,9 @@ enum class PackageSource { SMS, DIFF, USER, UNKNOWN }
 enum class ExpiryMode { EXACT, DAY_END }
 
 @Serializable
+enum class CloseReason { EXPIRED, CONSUMED, MISSING }
+
+@Serializable
 data class TrackedPackage(
     val smsId: Long? = null,
     val label: String? = null,
@@ -20,7 +23,8 @@ data class TrackedPackage(
     val source: PackageSource,
     val expiryMode: ExpiryMode = ExpiryMode.EXACT,
     val matched: Boolean = false,
-    val closed: Boolean = false
+    val closed: Boolean = false,
+    val closeReason: CloseReason? = null
 ) {
     fun isOpen(): Boolean = !closed
 }

@@ -2,6 +2,7 @@ package com.thegreatyamori.saldos.data.packages
 
 import com.thegreatyamori.saldos.data.sms.SmsActivation
 import com.thegreatyamori.saldos.domain.BalanceItem
+import com.thegreatyamori.saldos.domain.CloseReason
 import com.thegreatyamori.saldos.domain.ExpiryMode
 import com.thegreatyamori.saldos.domain.PackageSource
 import com.thegreatyamori.saldos.domain.Snapshot
@@ -114,7 +115,16 @@ class PackageTracker {
             val pkg = packages[index]
             if (!pkg.isOpen()) continue
             val expiresAt = runCatching { Instant.parse(pkg.expiresAt) }.getOrNull() ?: continue
-            val stillPresent = quotaItems(current).any { matches(pkg.dataMb, pkg.dataMb == 0, it) && hasRemaining(it) }
+            val matching = quotaItems(current).firstOrNull { matches(pkg.dataMb, pkg.dataMb == 0, it) }
+            val uniqueLabel = pkg.label?.takeIf { label ->
+                packages.count { it.isOpen() && it.label == label } == 1
+            }
+            val labelled = uniqueLabel?.let { label ->
+                quotaItems(current).firstOrNull { it.label == label && isDataItem(it) }
+            }
+            val consumedItem = matching ?: labelled
+            val stillPresent = matching != null && hasRemaining(matching)
+            val consumed = consumedItem != null && !hasRemaining(consumedItem)
             val expired = !now.isBefore(expiresAt)
             val missing = !stillPresent && pkg.matched
 
@@ -125,8 +135,14 @@ class PackageTracker {
                     missing && expired -> calibrate(startedAt, pkg.days, now)
                     else -> pkg.expiryMode
                 }
+                val reason = when {
+                    expired -> CloseReason.EXPIRED
+                    consumed -> CloseReason.CONSUMED
+                    else -> CloseReason.MISSING
+                }
                 packages[index] = pkg.copy(
                     closed = true,
+                    closeReason = reason,
                     expiryMode = calibrated,
                     expiresAt = startedAt?.let { expiryFor(it, pkg.days, calibrated).toString() } ?: pkg.expiresAt
                 )

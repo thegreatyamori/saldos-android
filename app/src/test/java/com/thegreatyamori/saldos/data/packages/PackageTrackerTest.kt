@@ -3,6 +3,7 @@ package com.thegreatyamori.saldos.data.packages
 import com.thegreatyamori.saldos.data.sms.DaysSource
 import com.thegreatyamori.saldos.data.sms.SmsActivation
 import com.thegreatyamori.saldos.domain.BalanceItem
+import com.thegreatyamori.saldos.domain.CloseReason
 import com.thegreatyamori.saldos.domain.ExpiryMode
 import com.thegreatyamori.saldos.domain.PackageSource
 import com.thegreatyamori.saldos.domain.Snapshot
@@ -106,6 +107,21 @@ class PackageTrackerTest {
         )
 
         assertTrue(closed.packages.single().closed)
+        assertEquals(CloseReason.CONSUMED, closed.packages.single().closeReason)
+    }
+
+    @Test
+    fun `marks a package as missing when the quota item disappears`() {
+        val active = tracker.reconcile(ActivationState(), null, snapshot(), listOf(sms(1)), start)
+        val closed = tracker.reconcile(
+            state = active,
+            previous = snapshot(),
+            current = snapshot().copy(hero = null),
+            activations = emptyList(),
+            now = start.plusSeconds(60)
+        )
+
+        assertEquals(CloseReason.MISSING, closed.packages.single().closeReason)
     }
 
     @Test
