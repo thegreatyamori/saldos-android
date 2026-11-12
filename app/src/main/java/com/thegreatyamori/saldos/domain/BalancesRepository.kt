@@ -36,6 +36,10 @@ interface BalancesRepository {
     fun setSmsTrackingEnabled(enabled: Boolean)
     fun smsOptInDismissed(): Boolean
     fun dismissSmsOptIn()
+    fun expiryRemindersEnabled(): Boolean
+    fun setExpiryRemindersEnabled(enabled: Boolean)
+    fun notificationsPermissionAsked(): Boolean
+    fun markNotificationsPermissionAsked()
     suspend fun logout()
 }
 
@@ -87,6 +91,18 @@ class DefaultBalancesRepository(
 
     override fun dismissSmsOptIn() {
         settings.smsOptInDismissed = true
+    }
+
+    override fun expiryRemindersEnabled(): Boolean = settings.expiryRemindersEnabled
+
+    override fun setExpiryRemindersEnabled(enabled: Boolean) {
+        settings.expiryRemindersEnabled = enabled
+    }
+
+    override fun notificationsPermissionAsked(): Boolean = settings.notificationsPermissionAsked
+
+    override fun markNotificationsPermissionAsked() {
+        settings.notificationsPermissionAsked = true
     }
 
     override suspend fun logout() {

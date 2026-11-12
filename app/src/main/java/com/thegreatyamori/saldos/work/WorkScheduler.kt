@@ -14,6 +14,7 @@ object WorkScheduler {
 
     private const val PERIODIC_WORK = "balance-refresh-periodic"
     private const val ONCE_WORK = "balance-refresh-once"
+    private const val EXPIRY_PERIODIC_WORK = "expiry-reminder-periodic"
 
     private val connected = Constraints.Builder()
         .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -27,6 +28,14 @@ object WorkScheduler {
             PERIODIC_WORK,
             ExistingPeriodicWorkPolicy.UPDATE,
             request
+        )
+
+        val reminders = PeriodicWorkRequestBuilder<ExpiryReminderWorker>(15, TimeUnit.MINUTES)
+            .build()
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            EXPIRY_PERIODIC_WORK,
+            ExistingPeriodicWorkPolicy.UPDATE,
+            reminders
         )
     }
 

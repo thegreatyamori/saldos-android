@@ -161,6 +161,8 @@ class SaldosViewModelTest {
         var packages: List<TrackedPackage> = emptyList()
         var smsEnabled = false
         var smsDismissed = false
+        var expiryReminders = true
+        var notificationsAsked = false
 
         override fun cached(): Snapshot? = snapshot
 
@@ -212,6 +214,18 @@ class SaldosViewModelTest {
 
         override fun dismissSmsOptIn() {
             smsDismissed = true
+        }
+
+        override fun expiryRemindersEnabled(): Boolean = expiryReminders
+
+        override fun setExpiryRemindersEnabled(enabled: Boolean) {
+            expiryReminders = enabled
+        }
+
+        override fun notificationsPermissionAsked(): Boolean = notificationsAsked
+
+        override fun markNotificationsPermissionAsked() {
+            notificationsAsked = true
         }
 
         override suspend fun logout() {

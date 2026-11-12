@@ -13,7 +13,8 @@ class PackageUpdater(
     private val store: ActivationStore,
     private val settings: SettingsStore,
     private val parser: CntSmsParser = CntSmsParser(),
-    private val tracker: PackageTracker = PackageTracker()
+    private val tracker: PackageTracker = PackageTracker(),
+    private val onClear: () -> Unit = {}
 ) {
 
     @Volatile
@@ -56,5 +57,6 @@ class PackageUpdater(
     fun clear() {
         cache = emptyList()
         store.clear()
+        onClear()
     }
 }
