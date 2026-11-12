@@ -27,7 +27,9 @@ data class SaldosUiState(
     val accountIdentifier: String? = null,
     val expiry: ExpiryUi? = null,
     val smsTrackingEnabled: Boolean = false,
-    val smsOptInDismissed: Boolean = false
+    val smsOptInDismissed: Boolean = false,
+    val expiryRemindersEnabled: Boolean = true,
+    val notificationsPermissionAsked: Boolean = false
 )
 
 sealed interface UiError {
@@ -56,7 +58,9 @@ class SaldosViewModel(private val repository: BalancesRepository) : ViewModel() 
             accountIdentifier = repository.identifier(),
             expiry = currentExpiry(),
             smsTrackingEnabled = repository.smsTrackingEnabled(),
-            smsOptInDismissed = repository.smsOptInDismissed()
+            smsOptInDismissed = repository.smsOptInDismissed(),
+            expiryRemindersEnabled = repository.expiryRemindersEnabled(),
+            notificationsPermissionAsked = repository.notificationsPermissionAsked()
         )
     )
     val state: StateFlow<SaldosUiState> = _state.asStateFlow()
@@ -91,7 +95,9 @@ class SaldosViewModel(private val repository: BalancesRepository) : ViewModel() 
             _state.value = SaldosUiState(
                 refreshPolicy = repository.refreshPolicy(),
                 smsTrackingEnabled = repository.smsTrackingEnabled(),
-                smsOptInDismissed = repository.smsOptInDismissed()
+                smsOptInDismissed = repository.smsOptInDismissed(),
+                expiryRemindersEnabled = repository.expiryRemindersEnabled(),
+                notificationsPermissionAsked = repository.notificationsPermissionAsked()
             )
         }
     }
@@ -105,6 +111,16 @@ class SaldosViewModel(private val repository: BalancesRepository) : ViewModel() 
     fun dismissSmsOptIn() {
         repository.dismissSmsOptIn()
         _state.update { it.copy(smsOptInDismissed = true) }
+    }
+
+    fun setExpiryRemindersEnabled(enabled: Boolean) {
+        repository.setExpiryRemindersEnabled(enabled)
+        _state.update { it.copy(expiryRemindersEnabled = enabled) }
+    }
+
+    fun markNotificationsPermissionAsked() {
+        repository.markNotificationsPermissionAsked()
+        _state.update { it.copy(notificationsPermissionAsked = true) }
     }
 
     private fun currentExpiry(): ExpiryUi? = expiryUi(activePackage(repository.trackedPackages()))

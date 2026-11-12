@@ -19,7 +19,10 @@ screen widgets.
   - **Always**: refreshes on WiFi too.
   - **Manual**: only when the user taps refresh.
 - Offline cache: the last snapshot stays visible when the network fails.
-- Settings screen with account, refresh policy, widget line, privacy and version.
+- Expiry reminders: daily notifications from three days before a package expires
+  (08:00–22:00), plus one final notice when the data expires or is consumed.
+- Settings screen with account, refresh policy, widget line, expiry reminders,
+  privacy and version.
 
 ## Requirements
 
@@ -136,6 +139,12 @@ process restarts.
 - Manual refresh ignores the automatic policy and always attempts a fetch.
 - WorkManager's 15 minutes is a minimum; Doze and battery optimization can
   delay it. The UI always shows the last update time.
+- Expiry reminders are checked on every refresh, on app resume and by a
+  dedicated periodic worker without a network constraint, so they still run
+  offline. The daily reminder is limited to one per calendar day between
+  08:00 and 22:00; the final notice is sent immediately. Reminder state is
+  stored locally and keyed with hashed package identifiers. Android 13+
+  requires the notification permission, requested when the feature is enabled.
 
 ## Privacy and security
 
@@ -144,4 +153,6 @@ process restarts.
 - The password must be recoverable to log in to CNT, so it is encrypted rather
   than hashed.
 - There is no backend: requests go from the device to CNT.
+- Widgets and expiry reminders only read local app data. Reminder notifications
+  hide package details on the lock screen.
 - Widgets only read the local snapshot cache.

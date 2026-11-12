@@ -54,7 +54,10 @@ fun SettingsScreen(
     onSelectLine: (String) -> Unit,
     onAddWidget: () -> Unit,
     onAddSquareWidget: () -> Unit,
-    onSmsTrackingChange: (Boolean) -> Unit
+    onSmsTrackingChange: (Boolean) -> Unit,
+    onExpiryRemindersChange: (Boolean) -> Unit,
+    notificationsAvailable: Boolean,
+    onOpenNotificationSettings: () -> Unit
 ) {
     var showPrivacy by rememberSaveable { mutableStateOf(false) }
 
@@ -156,6 +159,44 @@ fun SettingsScreen(
                             checked = state.smsTrackingEnabled,
                             onCheckedChange = onSmsTrackingChange
                         )
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Avisar vencimiento",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = "3 días antes, 1 aviso por día (08:00–22:00)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = state.expiryRemindersEnabled,
+                            onCheckedChange = onExpiryRemindersChange
+                        )
+                    }
+                    if (state.expiryRemindersEnabled && !notificationsAvailable) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                            Text(
+                                text = "Notificaciones bloqueadas por el sistema.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            TextButton(
+                                onClick = onOpenNotificationSettings,
+                                contentPadding = PaddingValues(horizontal = 0.dp)
+                            ) {
+                                Text("Abrir ajustes de notificaciones")
+                            }
+                        }
                     }
                 }
             }
