@@ -1,6 +1,7 @@
 package com.thegreatyamori.saldos.data.cnt
 
 import com.thegreatyamori.saldos.domain.Snapshot
+import com.thegreatyamori.saldos.util.Diag
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
@@ -22,6 +23,7 @@ sealed class CntException(message: String, cause: Throwable? = null) : Exception
     class Upstream(val status: Int, val path: String) : CntException("CNT $path ($status)")
     class Network(cause: Throwable) : CntException("Sin conexión: ${cause.message}", cause)
     class Malformed(cause: Throwable) : CntException("Respuesta inesperada de CNT", cause)
+    class EmptyLines : CntException("CNT no devolvió líneas para esta cuenta")
 }
 
 class CntClient(
@@ -44,25 +46,48 @@ class CntClient(
         serviceTypeHint: String? = null
     ): Snapshot = withContext(Dispatchers.IO) {
         try {
+            Diag.step("refresh start user=${Diag.mask(identifier)}")
             val csrf = fetchCsrfToken()
             val refreshedCsrf = login(identifier, password, csrf)
             val user = fetchUser(refreshedCsrf)
             val typeUser = user.typeUser ?: "empresa"
             val serviceType = user.serviceType ?: serviceTypeHint ?: "movil"
+            Diag.step("user type=$typeUser service=$serviceType")
             val rawIdentifier = user.identifier ?: identifier
+            Diag.step("user identifier=${Diag.mask(rawIdentifier)} len=${rawIdentifier.length}")
             val payloadId = if (typeUser == "empresa" || serviceType == "movil") {
                 rawIdentifier.drop(1)
             } else {
                 rawIdentifier
             }
-            val raw = fetchRawBalances(payloadId, typeUser, serviceType, refreshedCsrf)
+            Diag.step("balances id=${Diag.mask(payloadId)} len=${payloadId.length}")
+            var raw = fetchRawBalances(payloadId, typeUser, serviceType, refreshedCsrf)
+            if (raw.none { it.data.isNotEmpty() } && payloadId != rawIdentifier) {
+                Diag.warn(
+                    "balances empty for id len=${payloadId.length}; " +
+                        "retry with raw id len=${rawIdentifier.length}"
+                )
+                raw = fetchRawBalances(rawIdentifier, typeUser, serviceType, refreshedCsrf)
+            }
+            Diag.step(
+                "groups=" + raw.joinToString(",") { "${it.type}:${it.data.size}" }
+            )
             CntMapper.toSnapshot(raw, serviceType, preferredPhoneValue)
-                ?: throw CntException.Malformed(IllegalStateException("CNT returned no lines"))
+                ?.also {
+                    Diag.step(
+                        "refresh ok lines=${it.lines.size} items=${it.items.size} " +
+                            "hero=${it.hero != null}"
+                    )
+                }
+                ?: throw CntException.EmptyLines()
         } catch (error: CntException) {
+            Diag.warn("refresh failed ${error.javaClass.simpleName}: ${error.message}", error)
             throw error
         } catch (error: IOException) {
+            Diag.warn("refresh failed network: ${error.message}", error)
             throw CntException.Network(error)
         } catch (error: Exception) {
+            Diag.warn("refresh failed malformed: ${error.message}", error)
             throw CntException.Malformed(error)
         }
     }
@@ -83,7 +108,12 @@ class CntClient(
             .post(body.toRequestBody(JSON))
             .build()
         val response = execute(request, "api/login")
-        if (response.status >= 400) throw CntException.InvalidCredentials()
+        if (response.status == 422 || response.status == 401) {
+            throw CntException.InvalidCredentials()
+        }
+        if (response.status >= 400) {
+            throw CntException.Upstream(response.status, "api/login")
+        }
         return readCookie("XSRF-TOKEN") ?: csrf
     }
 
@@ -120,6 +150,7 @@ class CntClient(
         if (response.status >= 400) {
             throw CntException.Upstream(response.status, "api/balances_consumed/")
         }
+        Diag.body("api/balances_consumed/", response.body)
         return try {
             json.decodeFromString(ListSerializer(RawGroup.serializer()), response.body)
         } catch (error: Exception) {
@@ -133,13 +164,19 @@ class CntClient(
     }
 
     private fun execute(request: Request, path: String): HttpResult {
+        val cookieCount = cookieJar.loadForRequest(request.url).size
+        val hasCsrf = request.header("X-XSRF-TOKEN") != null
+        Diag.request(request.method, path, hasCsrf, cookieCount)
         val response = try {
             client.newCall(request).execute()
         } catch (error: IOException) {
+            Diag.warn("← $path network error: ${error.message}")
             throw CntException.Network(error)
         }
         response.use { result ->
-            return HttpResult(result.code, result.body?.string().orEmpty())
+            val body = result.body?.string().orEmpty()
+            Diag.response(path, result.code, body)
+            return HttpResult(result.code, body)
         }
     }
 

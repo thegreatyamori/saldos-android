@@ -38,6 +38,7 @@ sealed interface UiError {
     data object Network : UiError
     data object Upstream : UiError
     data object Malformed : UiError
+    data object EmptyLines : UiError
 }
 
 fun UiError.message(): String = when (this) {
@@ -46,6 +47,7 @@ fun UiError.message(): String = when (this) {
     UiError.Network -> "Sin conexión"
     UiError.Upstream -> "CNT no responde"
     UiError.Malformed -> "Respuesta inesperada de CNT"
+    UiError.EmptyLines -> "CNT no devolvió líneas para esta cuenta"
 }
 
 class SaldosViewModel(private val repository: BalancesRepository) : ViewModel() {
@@ -159,6 +161,7 @@ class SaldosViewModel(private val repository: BalancesRepository) : ViewModel() 
         is CntException.InvalidCredentials -> UiError.InvalidCredentials
         is CntException.Network -> UiError.Network
         is CntException.Upstream -> UiError.Upstream
+        is CntException.EmptyLines -> UiError.EmptyLines
         is CntException.Malformed -> UiError.Malformed
         else -> UiError.Malformed
     }

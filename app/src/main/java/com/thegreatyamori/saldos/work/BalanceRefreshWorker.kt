@@ -8,6 +8,7 @@ import com.thegreatyamori.saldos.data.cnt.CntException
 import com.thegreatyamori.saldos.data.settings.allowsAutomaticRefresh
 import com.thegreatyamori.saldos.domain.NoCredentialsException
 import com.thegreatyamori.saldos.domain.RefreshResult
+import com.thegreatyamori.saldos.util.Diag
 
 class BalanceRefreshWorker(
     appContext: Context,
@@ -21,14 +22,22 @@ class BalanceRefreshWorker(
 
         val onWifi = NetworkPolicy.isOnWifi(context)
         if (!repository.refreshPolicy().allowsAutomaticRefresh(onWifi)) {
+            Diag.step("worker skip policy=${repository.refreshPolicy()} wifi=$onWifi")
             return Result.success()
         }
 
+        Diag.step("worker refresh policy=${repository.refreshPolicy()} wifi=$onWifi")
         return when (val result = repository.refresh()) {
-            is RefreshResult.Success -> Result.success()
-            is RefreshResult.Failure -> when (result.error) {
-                is NoCredentialsException, is CntException.InvalidCredentials -> Result.failure()
-                else -> Result.retry()
+            is RefreshResult.Success -> {
+                Diag.step("worker success")
+                Result.success()
+            }
+            is RefreshResult.Failure -> {
+                Diag.warn("worker failure ${result.error.javaClass.simpleName}: ${result.error.message}")
+                when (result.error) {
+                    is NoCredentialsException, is CntException.InvalidCredentials -> Result.failure()
+                    else -> Result.retry()
+                }
             }
         }
     }

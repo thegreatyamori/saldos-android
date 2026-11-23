@@ -22,8 +22,8 @@ android {
         applicationId = "com.thegreatyamori.saldos"
         minSdk = 26
         targetSdk = 37
-        versionCode = 3
-        versionName = "1.1.0"
+        versionCode = 4
+        versionName = "1.1.1"
     }
 
     signingConfigs {
@@ -54,6 +54,11 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    testOptions {
+        // android.util.Log is used by Diag; unit tests only need it to be a no-op.
+        unitTests.isReturnDefaultValues = true
     }
 }
 

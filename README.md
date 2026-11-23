@@ -146,6 +146,19 @@ process restarts.
   stored locally and keyed with hashed package identifiers. Android 13+
   requires the notification permission, requested when the feature is enabled.
 
+## Diagnóstico
+
+The refresh flow logs to logcat under the `Saldos` tag:
+
+```bash
+adb logcat -s Saldos
+```
+
+Each step (CSRF, login, user, balances) logs its status; failed responses log a
+truncated body and the `api/balances_consumed/` payload is logged when it parses
+but maps to no lines. Identifiers are masked and passwords, tokens and encrypted
+payloads are never logged.
+
 ## Privacy and security
 
 - Credentials are encrypted with an AES key generated in Android Keystore.

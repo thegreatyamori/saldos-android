@@ -7,6 +7,7 @@ import com.thegreatyamori.saldos.data.creds.Credentials
 import com.thegreatyamori.saldos.data.packages.PackageUpdater
 import com.thegreatyamori.saldos.data.settings.RefreshPolicy
 import com.thegreatyamori.saldos.data.settings.SettingsStore
+import com.thegreatyamori.saldos.util.Diag
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -129,8 +130,10 @@ class DefaultBalancesRepository(
         snapshots.write(snapshot)
         runCatching { withContext(Dispatchers.IO) { packages.onSnapshot(previous, snapshot) } }
         listener.onSnapshotChanged()
+        Diag.step("repo success saved snapshot")
         RefreshResult.Success(snapshot)
     } catch (error: Exception) {
+        Diag.warn("repo failure ${error.javaClass.simpleName}: ${error.message}")
         RefreshResult.Failure(error, cached())
     }
 }
